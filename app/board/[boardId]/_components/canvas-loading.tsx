@@ -1,6 +1,6 @@
 import { Loader } from "lucide-react";
 import { Info } from "./info";
-import { Toolbar } from "./toolbar";
+import { ToolbarSkeleton } from "./toolbar";
 import { Participants } from "./participants";
 
 export const Loading = () => {
@@ -11,7 +11,7 @@ export const Loading = () => {
       <Loader className="h-6 w-6 text-muted-foreground animate-spin" />
       <Info.Skeleton />
       <Participants.Skeleton />
-      <Toolbar.Skeleton />
+      <ToolbarSkeleton />
     </main>
   );
 };
