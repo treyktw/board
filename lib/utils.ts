@@ -1,30 +1,24 @@
-import { Camera, Color, Point, Side, XYWH } from "@/types/canvas";
-import { type ClassValue, clsx } from "clsx"
+import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
+import { 
+  Camera, 
+  Color, 
+  Layer, 
+  LayerType, 
+  PathLayer, 
+  Point, 
+  Side, 
+  XYWH
+} from "@/types/canvas";
+
 const COLORS = [
-  "#FF0000", // Red
-  "#FFA500", // Orange
-  "#FFFF00", // Yellow
-  "#008000", // Green
-  "#0000FF", // Blue
-  "#800080", // Purple
-  "#FFC0CB", // Pink
-  "#800000", // Maroon
-  "#808000", // Olive
-  "#008080", // Teal
-  "#000080", // Navy
-  "#FF6347", // Tomato
-  "#FF4500", // OrangeRed
-  "#FF8C00", // DarkOrange
-  "#FFD700", // Gold
-  "#ADFF2F", // GreenYellow
-  "#00FFFF", // Aqua
-  "#00FF00", // Lime
-  "#9370DB", // MediumPurple
-  "#DC143C", // Crimson
-  "#6A5ACD", // SlateBlue
-]
+  "#DC2626", 
+  "#D97706", 
+  "#059669", 
+  "#7C3AED", 
+  "#DB2777"
+];
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -32,21 +26,20 @@ export function cn(...inputs: ClassValue[]) {
 
 export function connectionIdToColor(connectionId: number): string {
   return COLORS[connectionId % COLORS.length];
-}
+};
 
 export function pointerEventToCanvasPoint(
   e: React.PointerEvent,
-  camera: Camera
+  camera: Camera,
 ) {
   return {
     x: Math.round(e.clientX) - camera.x,
-    y: Math.round(e.clientY) - camera.y
-  }
-}
+    y: Math.round(e.clientY) - camera.y,
+  };
+};
 
-export function ColorToCSS(color: Color) {
-  return `
-  #${color.r.toString(16).padStart(2, "0")}${color.g.toString(16).padStart(2, "0")}${color.b.toString(16).padStart(2, "0")}`
+export function colorToCss(color: Color) {
+  return `#${color.r.toString(16).padStart(2, "0")}${color.g.toString(16).padStart(2, "0")}${color.b.toString(16).padStart(2, "0")}`;
 }
 
 export function resizeBounds(
@@ -82,4 +75,108 @@ export function resizeBounds(
   }
 
   return result;
+};
+
+export function findIntersectingLayersWithRectangle(
+  layerIds: readonly string[],
+  layers: ReadonlyMap<string, Layer>,
+  a: Point,
+  b: Point,
+) {
+  const rect = {
+    x: Math.min(a.x, b.x),
+    y: Math.min(a.y, b.y),
+    width: Math.abs(a.x - b.x),
+    height: Math.abs(a.y - b.y),
+  };
+
+  const ids = [];
+
+  for (const layerId of layerIds) {
+    const layer = layers.get(layerId);
+
+    if (layer == null) {
+      continue;
+    }
+
+    const { x, y, height, width } = layer;
+
+    if (
+      rect.x + rect.width > x &&
+      rect.x < x + width && 
+      rect.y + rect.height > y &&
+      rect.y < y + height
+    ) {
+      ids.push(layerId);
+    }
+  }
+
+  return ids;
+};
+
+export function getContrastingTextColor(color: Color) {
+  const luminance = 0.299 * color.r + 0.587 * color.g + 0.114 * color.b;
+
+  return luminance > 182 ? "black" : "white";
+};
+
+export function penPointsToPathLayer(
+  points: number[][],
+  color: Color,
+): PathLayer {
+  if (points.length < 2) {
+    throw new Error("Cannot transform points with less than 2 points");
+  }
+
+  let left = Number.POSITIVE_INFINITY;
+  let top = Number.POSITIVE_INFINITY;
+  let right = Number.NEGATIVE_INFINITY;
+  let bottom = Number.NEGATIVE_INFINITY;
+
+  for (const point of points) {
+    const [x, y] = point;
+
+    if (left > x) {
+      left = x;
+    }
+
+    if (top > y) {
+      top = y;
+    }
+
+    if (right < x) {
+      right = x;
+    }
+
+    if (bottom < y) {
+      bottom = y;
+    }
+  }
+
+  return {
+    type: LayerType.Path,
+    x: left,
+    y: top,
+    width: right - left,
+    height: bottom - top,
+    fill: color,
+    points: points
+      .map(([x, y, pressure]) => [x - left, y - top, pressure]),
+  };
+};
+
+export function getSvgPathFromStroke(stroke: number[][]) {
+  if (!stroke.length) return "";
+
+  const d = stroke.reduce(
+    (acc, [x0, y0], i, arr) => {
+      const [x1, y1] = arr[(i + 1) % arr.length];
+      acc.push(x0, y0, (x0 + x1) / 2, (y0 + y1) / 2);
+      return acc;
+    },
+    ["M", ...stroke[0], "Q"]
+  );
+
+  d.push("Z");
+  return d.join(" ");
 };

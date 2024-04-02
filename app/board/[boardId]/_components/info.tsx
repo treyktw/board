@@ -44,7 +44,7 @@ export const Info = ({ boardId }: InfoProps) => {
   if (!data) return <Info.Skeleton />
 
   return (
-    <div className="absolute top-2 left-2 bg-white rounded-md px-1.5 h-12 flex items-center shadow-md">
+    <div className="absolute top-2 left-2 bg-white rounded-md px-1.5 h-12 flex items-center shadow-md select-none">
       <Hint label="Go To Boards" side="bottom" sideOffset={10}>
         <Button variant="board" className="px-2" asChild>
           <Link href="/">
