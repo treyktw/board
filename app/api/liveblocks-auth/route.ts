@@ -8,7 +8,7 @@ import { auth } from "@clerk/nextjs";
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 const liveblocks = new Liveblocks({
-  secret: "sk_dev_F9ccrfBHyvnkS5uB0OmZLA2PHz9GH-mKFqiBAhblz53GapAuOmprSsQF_stPhsQ7",
+  secret: process.env.LIVEBLOCKS_SECRET_KEY!
 });
 
 
